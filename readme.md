@@ -27,8 +27,8 @@ The pipeline follows these main steps:
 
 To execute this pipeline, run:
 
-\```
+```
 python pipeline.py
-\```
+```
 
 For adapting this pipeline to other tasks, users may need to adjust data loading, preprocessing, and the choice of machine learning algorithm as per the specific requirements.
