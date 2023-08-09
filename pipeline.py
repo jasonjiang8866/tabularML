@@ -127,3 +127,18 @@ print(f"R^2 Score: {r2}")
 
 # 9. Model Saving
 joblib.dump(best_lgbm_model, 'best_lgbm_model.pkl')
+
+# 10. Model Deployment
+# Load the model
+loaded_model = joblib.load('best_lgbm_model.pkl')
+
+# Test Prediction
+test_pred = loaded_model.predict(X_test_transformed_top)
+
+# plot the predictions vs actual
+import matplotlib.pyplot as plt
+plt.scatter(y_test, test_pred)
+plt.xlabel('Actual Labels')
+plt.ylabel('Predicted Labels')
+plt.title('Predictions vs Actuals')
+plt.show()
