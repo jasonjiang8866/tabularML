@@ -71,7 +71,21 @@ uv run streamlit run ui.py
 ```
 Then open your browser to `http://localhost:8501`
 
-### 2. Navigate Through the Pipeline
+### 2. User Interface Overview
+
+The TabularML web interface provides an intuitive, step-by-step workflow for machine learning:
+
+![TabularML UI - Home Page](assets/tabularml-ui-home.png)
+
+The interface features:
+- **📊 Interactive Dashboard**: Clean, modern design with real-time status updates
+- **🎛️ Navigation Panel**: Easy access to all pipeline stages
+- **📈 Data Visualization**: Rich charts and graphs for data exploration
+- **⚡ Quick Actions**: One-click initialization and data loading
+
+![TabularML UI - Data Exploration](assets/tabularml-ui-data-exploration.png)
+
+### 3. Navigate Through the Pipeline
 
 #### 🏠 Home Page
 - Initialize the pipeline
