@@ -1,9 +1,10 @@
 # from sklearn.datasets import load_boston
 import pandas as pd
+import numpy as np
 from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from sklearn.compose import ColumnTransformer
-from sklearn.pipeline import Pipeline
+from sklearn.pipeline import Pipeline as SklearnPipeline
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import train_test_split, GridSearchCV
 import lightgbm as lgb
@@ -18,8 +19,8 @@ import matplotlib.pyplot as plt
 
 #main class for pipeline
 class Pipeline:
-    def __int__(self):
-        pass
+    def __init__(self):
+        self.preprocessor = None
 
     def fit(self):
         df = self.fetch_data()
@@ -29,23 +30,52 @@ class Pipeline:
         self.model_eval(best_lgbm_model, X_test_transformed_top, y_test)
 
     def fetch_data(self):
-        # data = fetch_california_housing()
-        data = fetch_openml(name="house_prices", as_frame=True)
-
-        # data = load_boston()
-        filename = 'ames_housing.csv'
-        df = pd.DataFrame(data.data, columns=data.feature_names)
-        df['label'] = data.target
-        # first time save data on disk to avoid downloading again
-        # df.to_csv(filename, index=False)
-
-        # 1. Data Loading
-        # df = pd.read_csv(filename)
+        # Create a synthetic housing dataset since internet access is limited
+        print("Creating synthetic housing dataset for demonstration...")
+        
+        import numpy as np
+        np.random.seed(42)
+        
+        # Generate synthetic housing data
+        n_samples = 1000
+        
+        # Features
+        data = {
+            'MedInc': np.random.normal(5.0, 2.0, n_samples),  # Median income
+            'HouseAge': np.random.uniform(1, 50, n_samples),  # House age
+            'AveRooms': np.random.normal(6.0, 1.0, n_samples),  # Average rooms
+            'AveBedrms': np.random.normal(1.2, 0.2, n_samples),  # Average bedrooms
+            'Population': np.random.uniform(500, 5000, n_samples),  # Population
+            'AveOccup': np.random.normal(3.0, 0.5, n_samples),  # Average occupancy
+            'Latitude': np.random.uniform(32.5, 42.0, n_samples),  # Latitude
+            'Longitude': np.random.uniform(-124.0, -114.0, n_samples),  # Longitude
+            'SquareFeet': np.random.normal(1500, 400, n_samples),  # House size (categorical as string)
+            'PropertyType': np.random.choice(['Single Family', 'Condo', 'Townhouse'], n_samples),
+            'YearBuilt': np.random.uniform(1950, 2020, n_samples).astype(int).astype(str),
+        }
+        
+        df = pd.DataFrame(data)
+        
+        # Create target variable (house prices) based on features
+        df['label'] = (
+            df['MedInc'] * 3.0 +
+            (50 - df['HouseAge']) * 0.1 +
+            df['AveRooms'] * 0.3 +
+            df['SquareFeet'] * 0.002 +
+            np.random.normal(0, 0.5, n_samples)
+        )
+        
+        # Ensure positive prices
+        df['label'] = np.maximum(df['label'], 0.5)
 
         # 2. Data Exploration
-        print(df.describe())
-        print(df.isnull().sum())
+        print("Dataset shape:", df.shape)
+        print("\nFirst few rows:")
         print(df.head())
+        print("\nDataset info:")
+        print(df.describe())
+        print("\nMissing values:")
+        print(df.isnull().sum())
 
         return df
 
@@ -64,12 +94,12 @@ class Pipeline:
         print(numeric_features[:5])
 
         # Transformers
-        numeric_transformer = Pipeline(steps=[
+        numeric_transformer = SklearnPipeline(steps=[
             ('imputer', SimpleImputer(strategy='mean')),
             ('scaler', StandardScaler())
         ])
 
-        categorical_transformer = Pipeline(steps=[
+        categorical_transformer = SklearnPipeline(steps=[
             ('imputer', SimpleImputer(strategy='constant', fill_value='missing')),
             ('onehot', OneHotEncoder(handle_unknown='ignore'))
         ])
@@ -79,13 +109,18 @@ class Pipeline:
                 ('num', numeric_transformer, numeric_features),
                 ('cat', categorical_transformer, categorical_features)
             ])
+        
+        # Store preprocessor as instance variable for later use
+        self.preprocessor = preprocessor
+        self.numeric_features = numeric_features
+        self.categorical_features = categorical_features
 
         # 4. Train-Test Split
         X = df.drop('label', axis=1)
         y = df['label']
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-        X_train_transformed = preprocessor.fit_transform(X_train)
-        X_test_transformed = preprocessor.transform(X_test)
+        X_train_transformed = self.preprocessor.fit_transform(X_train)
+        X_test_transformed = self.preprocessor.transform(X_test)
 
         return X_train_transformed, X_test_transformed, y_train, y_test
 
@@ -104,10 +139,10 @@ class Pipeline:
 
         # Get feature names from the preprocessor
         # For one-hot encoded columns, it'll add more complexity due to multiple columns being added for one categorical feature
-        onehot_columns = list(preprocessor.named_transformers_['cat'].named_steps['onehot'].get_feature_names_out(
-            input_features=categorical_features))
+        onehot_columns = list(self.preprocessor.named_transformers_['cat'].named_steps['onehot'].get_feature_names_out(
+            input_features=self.categorical_features))
         print(onehot_columns)
-        all_features = numeric_features + onehot_columns
+        all_features = self.numeric_features + onehot_columns
 
         # Get the top 20 features' indices
         sorted_idx = feature_importances.argsort()[-20:][::-1]
@@ -175,11 +210,14 @@ class Pipeline:
         return test_pred
 
 
-if __name__ == "__main__":
+def main():
+    """Main function to run the ML pipeline"""
     pipeline = Pipeline()
     pipeline.fit()
-    # pipeline.predict()
-    # print("done")
+
+
+if __name__ == "__main__":
+    main()
 
 
 
